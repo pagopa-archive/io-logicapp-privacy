@@ -1,0 +1,311 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+      "Filter_array_CF-NOT-VALID": {
+        "inputs": {
+          "from": "@body('Filter_array_NEW_ROWS')",
+          "where": "@not(or(equals(length(trim(item()['CFUtente'])), 16),equals(length(trim(item()['CFUtente'])), 11)))"
+        },
+        "runAfter": {
+          "For_each_UPDATE_TRIM_UPPER": ["Succeeded"]
+        },
+        "type": "Query"
+      },
+      "Filter_array_CF-VALID": {
+        "inputs": {
+          "from": "@body('Filter_array_NEW_ROWS')",
+          "where": "@or(equals(length(trim(item()['CFUtente'])), 16),equals(length(trim(item()['CFUtente'])), 11))"
+        },
+        "runAfter": {
+          "For_each_CF-NOT-VALID": ["Succeeded"]
+        },
+        "type": "Query"
+      },
+      "Filter_array_NEW_ROWS": {
+        "inputs": {
+          "from": "@body('Get_rows')?['value']",
+          "where": "@equals(length(concat('', item()?['Email_IO'])), 0)"
+        },
+        "runAfter": {
+          "Get_rows": ["Succeeded"]
+        },
+        "type": "Query"
+      },
+      "For_each_CF-NOT-VALID": {
+        "actions": {
+          "Update_row_CF-NOT-VALID": {
+            "inputs": {
+              "body": {
+                "Email_IO": "CF-NOT-VALID"
+              },
+              "host": {
+                "connection": {
+                  "name": "@parameters('$connections')['googlesheet']['connectionId']"
+                }
+              },
+              "method": "patch",
+              "path": "/datasets/@{encodeURIComponent(parameters('googlesheet-id'))}/tables/@{encodeURIComponent(parameters('googlesheet-gid'))}/items/@{encodeURIComponent(items('For_each_CF-NOT-VALID')?['__PowerAppsId__'])}"
+            },
+            "metadata": {
+              "1wzboDF399kTiIMC81Q2X_6Vnz2bDNnk_acRFO5Pb24w": "RichiesteDirittiPrivacy"
+            },
+            "runAfter": {},
+            "type": "ApiConnection"
+          }
+        },
+        "foreach": "@body('Filter_array_CF-NOT-VALID')",
+        "runAfter": {
+          "Filter_array_CF-NOT-VALID": ["Succeeded"]
+        },
+        "type": "Foreach"
+      },
+      "For_each_CF-VALID": {
+        "actions": {
+          "Condition_CF-FOUND": {
+            "actions": {
+              "For_each": {
+                "actions": {
+                  "Condition_EMAIL-FOUND": {
+                    "actions": {
+                      "Get_all_documents_EMAIL-SHARED": {
+                        "inputs": {
+                          "body": {
+                            "QueryText": "SELECT DISTINCT VALUE c.fiscalCode FROM c WHERE c.email = \"@{items('For_each')?['email']}\" AND c.isEmailValidated = true ORDER BY c.fiscalCode"
+                          },
+                          "host": {
+                            "connection": {
+                              "name": "@parameters('$connections')['documentdb']['connectionId']"
+                            }
+                          },
+                          "method": "post",
+                          "path": "/v2/dbs/@{encodeURIComponent(parameters('cosmos-db'))}/colls/@{encodeURIComponent(parameters('cosmos-container'))}/query"
+                        },
+                        "runAfter": {
+                          "Update_row_EMAIL-FOUND": ["Succeeded"]
+                        },
+                        "type": "ApiConnection"
+                      },
+                      "Update_row_EMAIL-FOUND": {
+                        "inputs": {
+                          "body": {
+                            "CodiceConferma": "@{toupper(substring(items('For_each_CF-VALID')?['__PowerAppsId__'],0,8))}",
+                            "Email_IO": "@{items('For_each')?['email']}",
+                            "isEmailValidated": "@{items('For_each')?['isEmailValidated']}"
+                          },
+                          "host": {
+                            "connection": {
+                              "name": "@parameters('$connections')['googlesheet']['connectionId']"
+                            }
+                          },
+                          "method": "patch",
+                          "path": "/datasets/@{encodeURIComponent(parameters('googlesheet-id'))}/tables/@{encodeURIComponent(parameters('googlesheet-gid'))}/items/@{encodeURIComponent(items('For_each_CF-VALID')?['__PowerAppsId__'])}"
+                        },
+                        "metadata": {
+                          "1wzboDF399kTiIMC81Q2X_6Vnz2bDNnk_acRFO5Pb24w": "RichiesteDirittiPrivacy"
+                        },
+                        "runAfter": {},
+                        "type": "ApiConnection"
+                      },
+                      "Update_row_EMAIL-SHARED": {
+                        "inputs": {
+                          "body": {
+                            "IsEmailShared": "@{greater(body('Get_all_documents_EMAIL-SHARED')?['_count'],1)}"
+                          },
+                          "host": {
+                            "connection": {
+                              "name": "@parameters('$connections')['googlesheet']['connectionId']"
+                            }
+                          },
+                          "method": "patch",
+                          "path": "/datasets/@{encodeURIComponent(parameters('googlesheet-id'))}/tables/@{encodeURIComponent(parameters('googlesheet-gid'))}/items/@{encodeURIComponent(items('For_each_CF-VALID')?['__PowerAppsId__'])}"
+                        },
+                        "metadata": {
+                          "1wzboDF399kTiIMC81Q2X_6Vnz2bDNnk_acRFO5Pb24w": "RichiesteDirittiPrivacy"
+                        },
+                        "runAfter": {
+                          "Get_all_documents_EMAIL-SHARED": ["Succeeded"]
+                        },
+                        "type": "ApiConnection"
+                      }
+                    },
+                    "else": {
+                      "actions": {
+                        "Update_row_EMAIL-NOT-FOUND": {
+                          "inputs": {
+                            "body": {
+                              "Email_IO": "EMAIL-NOT-FOUND"
+                            },
+                            "host": {
+                              "connection": {
+                                "name": "@parameters('$connections')['googlesheet']['connectionId']"
+                              }
+                            },
+                            "method": "patch",
+                            "path": "/datasets/@{encodeURIComponent(parameters('googlesheet-id'))}/tables/@{encodeURIComponent(parameters('googlesheet-gid'))}/items/@{encodeURIComponent(items('For_each_CF-VALID')?['__PowerAppsId__'])}"
+                          },
+                          "metadata": {
+                            "1wzboDF399kTiIMC81Q2X_6Vnz2bDNnk_acRFO5Pb24w": "RichiesteDirittiPrivacy"
+                          },
+                          "runAfter": {},
+                          "type": "ApiConnection"
+                        }
+                      }
+                    },
+                    "expression": {
+                      "and": [
+                        {
+                          "greater": [
+                            "@length(concat('', items('For_each')?['email']))",
+                            0
+                          ]
+                        }
+                      ]
+                    },
+                    "runAfter": {},
+                    "type": "If"
+                  }
+                },
+                "foreach": "@body('Get_all_documents')?['Documents']",
+                "runAfter": {},
+                "type": "Foreach"
+              }
+            },
+            "else": {
+              "actions": {
+                "Update_row_CF-NOT-FOUND": {
+                  "inputs": {
+                    "body": {
+                      "Email_IO": "CF-NOT-FOUND"
+                    },
+                    "host": {
+                      "connection": {
+                        "name": "@parameters('$connections')['googlesheet']['connectionId']"
+                      }
+                    },
+                    "method": "patch",
+                    "path": "/datasets/@{encodeURIComponent(parameters('googlesheet-id'))}/tables/@{encodeURIComponent(parameters('googlesheet-gid'))}/items/@{encodeURIComponent(items('For_each_CF-VALID')?['__PowerAppsId__'])}"
+                  },
+                  "metadata": {
+                    "1wzboDF399kTiIMC81Q2X_6Vnz2bDNnk_acRFO5Pb24w": "RichiesteDirittiPrivacy"
+                  },
+                  "runAfter": {},
+                  "type": "ApiConnection"
+                }
+              }
+            },
+            "expression": {
+              "and": [
+                {
+                  "greater": ["@body('Get_all_documents')?['_count']", 0]
+                }
+              ]
+            },
+            "runAfter": {
+              "Get_all_documents": ["Succeeded"]
+            },
+            "type": "If"
+          },
+          "Get_all_documents": {
+            "inputs": {
+              "body": {
+                "QueryText": "SELECT TOP 1 c.email, c.isEmailValidated FROM c WHERE c.fiscalCode = \"@{toupper(items('For_each_CF-VALID')?['CFUtente'])}\" ORDER BY c.version DESC"
+              },
+              "host": {
+                "connection": {
+                  "name": "@parameters('$connections')['documentdb']['connectionId']"
+                }
+              },
+              "method": "post",
+              "path": "/v2/dbs/@{encodeURIComponent(parameters('cosmos-db'))}/colls/@{encodeURIComponent(parameters('cosmos-container'))}/query"
+            },
+            "runAfter": {},
+            "type": "ApiConnection"
+          }
+        },
+        "foreach": "@body('Filter_array_CF-VALID')",
+        "runAfter": {
+          "Filter_array_CF-VALID": ["Succeeded"]
+        },
+        "type": "Foreach"
+      },
+      "For_each_UPDATE_TRIM_UPPER": {
+        "actions": {
+          "Update_row_TRIM_UPPER": {
+            "inputs": {
+              "body": {
+                "CFUtente": "@{trim(toUpper(items('For_each_UPDATE_TRIM_UPPER')?['CFUtente']))}"
+              },
+              "host": {
+                "connection": {
+                  "name": "@parameters('$connections')['googlesheet']['connectionId']"
+                }
+              },
+              "method": "patch",
+              "path": "/datasets/@{encodeURIComponent(parameters('googlesheet-id'))}/tables/@{encodeURIComponent(parameters('googlesheet-gid'))}/items/@{encodeURIComponent(items('For_each_UPDATE_TRIM_UPPER')?['__PowerAppsId__'])}"
+            },
+            "metadata": {
+              "1wzboDF399kTiIMC81Q2X_6Vnz2bDNnk_acRFO5Pb24w": "RichiesteDirittiPrivacy"
+            },
+            "runAfter": {},
+            "type": "ApiConnection"
+          }
+        },
+        "foreach": "@body('Filter_array_NEW_ROWS')",
+        "runAfter": {
+          "Filter_array_NEW_ROWS": ["Succeeded"]
+        },
+        "type": "Foreach"
+      },
+      "Get_rows": {
+        "inputs": {
+          "host": {
+            "connection": {
+              "name": "@parameters('$connections')['googlesheet']['connectionId']"
+            }
+          },
+          "method": "get",
+          "path": "/datasets/@{encodeURIComponent(parameters('googlesheet-id'))}/tables/@{encodeURIComponent(parameters('googlesheet-gid'))}/items"
+        },
+        "metadata": {
+          "@parameters('googlesheet-id')": "RichiesteDirittiPrivacy"
+        },
+        "runAfter": {},
+        "type": "ApiConnection"
+      }
+    },
+    "contentVersion": "1.0.0.0",
+    "outputs": {},
+    "parameters": {
+      "$connections": {
+        "defaultValue": {},
+        "type": "Object"
+      },
+      "cosmos-container": {
+        "defaultValue": "profiles",
+        "type": "String"
+      },
+      "cosmos-db": {
+        "defaultValue": "db",
+        "type": "String"
+      },
+      "googlesheet-gid": {
+        "defaultValue": "default-googlesheet-gid",
+        "type": "String"
+      },
+      "googlesheet-id": {
+        "defaultValue": "default-googlesheet-id",
+        "type": "String"
+      }
+    },
+    "triggers": {
+      "Recurrence": {
+        "recurrence": {
+          "frequency": "Minute",
+          "interval": 5
+        },
+        "type": "Recurrence"
+      }
+    }
+  }
+}
