@@ -307,5 +307,33 @@
         "type": "Recurrence"
       }
     }
+  },
+  "parameters": {
+    "$connections": {
+      "value": {
+        "documentdb": {
+          "connectionId": "",
+          "connectionName": "",
+          "id": ""
+        },
+        "googlesheet": {
+          "connectionId": "",
+          "connectionName": "",
+          "id": ""
+        }
+      }
+    },
+    "cosmos-container": {
+      "value": ""
+    },
+    "cosmos-db": {
+      "value": ""
+    },
+    "googlesheet-gid": {
+      "value": ""
+    },
+    "googlesheet-id": {
+      "value": ""
+    }
   }
 }
