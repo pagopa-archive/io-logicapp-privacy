@@ -1,422 +1,432 @@
 {
-  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
-  "contentVersion": "1.0.0.0",
-  "parameters": {
-    "$connections": {
-      "defaultValue": {},
-      "type": "Object"
-    },
-    "cosmos-container": {
-      "defaultValue": "profiles",
-      "type": "String"
-    },
-    "cosmos-db": {
-      "defaultValue": "db",
-      "type": "String"
-    },
-    "googlesheet-gid": {
-      "defaultValue": "default-googlesheet-gid",
-      "type": "String"
-    },
-    "googlesheet-id": {
-      "defaultValue": "default-googlesheet-id",
-      "type": "String"
-    }
-  },
-  "triggers": {
-    "Recurrence": {
-      "recurrence": {
-        "frequency": "Minute",
-        "interval": 5
-      },
-      "type": "Recurrence"
-    }
-  },
-  "actions": {
-    "Filter_array_WORKING_ROWS_CFVALIDATED_NOT_EMPTY": {
-      "runAfter": {
-        "Filter_array_WORKING_ROWS_EMAIL_IO_NOT_EMPTY": ["Succeeded"]
-      },
-      "type": "Query",
-      "inputs": {
-        "from": "@body('Filter_array_WORKING_ROWS_EMAIL_IO_NOT_EMPTY')",
-        "where": "@not(equals(length(concat('', item()?['CFValidated'])), 0))"
-      }
-    },
-    "Filter_array_WORKING_ROWS_EMAIL_IO_NOT_EMPTY": {
-      "runAfter": {
-        "Filter_array_WORKING_ROWS_EseguiOperazione_SI": ["Succeeded"]
-      },
-      "type": "Query",
-      "inputs": {
-        "from": "@body('Filter_array_WORKING_ROWS_EseguiOperazione_SI')",
-        "where": "@not(equals(length(concat('', item()?['Email_IO'])), 0))"
-      }
-    },
-    "Filter_array_WORKING_ROWS_EseguiOperazione_SI": {
-      "runAfter": {
-        "Get_rows": ["Succeeded"]
-      },
-      "type": "Query",
-      "inputs": {
-        "from": "@body('Get_rows')?['value']",
-        "where": "@equals(item()?['EseguiOperazione'], 'SI')"
-      }
-    },
-    "Filter_array_WORKING_ROWS_StatoDatabase_PENDING_WIP": {
-      "runAfter": {
-        "Filter_array_WORKING_ROWS_CFVALIDATED_NOT_EMPTY": ["Succeeded"]
-      },
-      "type": "Query",
-      "inputs": {
-        "from": "@body('Filter_array_WORKING_ROWS_CFVALIDATED_NOT_EMPTY')",
-        "where": "@or(equals(item()?['StatoDatabase'], 'PENDING'),equals(item()?['StatoDatabase'], 'WIP'))"
-      }
-    },
-    "Filter_array_WORKING_ROWS_TODO": {
-      "runAfter": {
-        "Filter_array_WORKING_ROWS_CFVALIDATED_NOT_EMPTY": ["Succeeded"]
-      },
-      "type": "Query",
-      "inputs": {
-        "from": "@body('Filter_array_WORKING_ROWS_CFVALIDATED_NOT_EMPTY')",
-        "where": "@not(equals(item()?['EsitoOperazione'], 'ESEGUITA'))"
-      }
-    },
-    "For_each_WORKING_ROWS_StatoDatabase_PENDING_WIP": {
-      "foreach": "@body('Filter_array_WORKING_ROWS_StatoDatabase_PENDING_WIP')",
-      "actions": {
-        "For_each_PENDING_WIP": {
-          "foreach": "@body('Get_all_documents_PENDING_WIP')?['Documents']",
-          "actions": {
-            "Update_row_PENDING_WIP": {
-              "runAfter": {},
-              "type": "ApiConnection",
-              "inputs": {
-                "body": {
-                  "StatoDatabase": "@item()?['status']"
-                },
-                "host": {
-                  "connection": {
-                    "name": "@parameters('$connections')['googlesheet']['connectionId']"
-                  }
-                },
-                "method": "patch",
-                "path": "/datasets/@{encodeURIComponent(parameters('googlesheet-id'))}/tables/@{encodeURIComponent(parameters('googlesheet-gid'))}/items/@{encodeURIComponent(items('For_each_WORKING_ROWS_StatoDatabase_PENDING_WIP')?['__PowerAppsId__'])}"
-              }
-            }
-          },
-          "runAfter": {
-            "Get_all_documents_PENDING_WIP": ["Succeeded"]
-          },
-          "type": "Foreach"
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+      "Filter_array_WORKING_ROWS_CFVALIDATED_NOT_EMPTY": {
+        "inputs": {
+          "from": "@body('Filter_array_WORKING_ROWS_EMAIL_IO_NOT_EMPTY')",
+          "where": "@not(equals(length(concat('', item()?['CFValidated'])), 0))"
         },
-        "Get_all_documents_PENDING_WIP": {
-          "runAfter": {
-            "Set_variable_choice_PENDING_WIP": ["Succeeded"]
-          },
-          "type": "ApiConnection",
-          "inputs": {
-            "body": {
-              "QueryText": "SELECT TOP 1 * FROM c WHERE c.fiscalCode = \"@{items('For_each_WORKING_ROWS_StatoDatabase_PENDING_WIP')?['CFValidated']}\" AND c.choice = \"@{variables('choice_PENDING_WIP')}\" ORDER BY c.version DESC"
-            },
-            "host": {
-              "connection": {
-                "name": "@parameters('$connections')['documentdb']['connectionId']"
-              }
-            },
-            "method": "post",
-            "path": "/v2/dbs/@{encodeURIComponent(parameters('cosmos-db'))}/colls/@{encodeURIComponent(parameters('cosmos-container'))}/query"
-          }
+        "runAfter": {
+          "Filter_array_WORKING_ROWS_EMAIL_IO_NOT_EMPTY": ["Succeeded"]
         },
-        "Set_variable_choice_PENDING_WIP": {
-          "runAfter": {},
-          "type": "SetVariable",
-          "inputs": {
-            "name": "choice_PENDING_WIP",
-            "value": "@{replace(item()?['OperazioneRichiestaEseguita'],'-ABORT','')}"
-          }
-        }
+        "type": "Query"
       },
-      "runAfter": {
-        "Initialize_variable_choice_PENDING_WIP": ["Succeeded"]
+      "Filter_array_WORKING_ROWS_EMAIL_IO_NOT_EMPTY": {
+        "inputs": {
+          "from": "@body('Filter_array_WORKING_ROWS_EseguiOperazione_SI')",
+          "where": "@not(equals(length(concat('', item()?['Email_IO'])), 0))"
+        },
+        "runAfter": {
+          "Filter_array_WORKING_ROWS_EseguiOperazione_SI": ["Succeeded"]
+        },
+        "type": "Query"
       },
-      "type": "Foreach",
-      "runtimeConfiguration": {
-        "concurrency": {
-          "repetitions": 1
-        }
-      }
-    },
-    "For_each_WORKING_ROWS_TODO": {
-      "foreach": "@body('Filter_array_WORKING_ROWS_TODO')",
-      "actions": {
-        "Condition": {
-          "actions": {
-            "Create_or_update_document_noversion": {
-              "runAfter": {},
-              "type": "ApiConnection",
-              "inputs": {
-                "body": "@variables('NewDocument')",
-                "headers": {
-                  "x-ms-documentdb-raw-partitionkey": "\"@{items('For_each_WORKING_ROWS_TODO')?['CFValidated']}\""
-                },
-                "host": {
-                  "connection": {
-                    "name": "@parameters('$connections')['documentdb']['connectionId']"
-                  }
-                },
-                "method": "post",
-                "path": "/dbs/@{encodeURIComponent(parameters('cosmos-db'))}/colls/@{encodeURIComponent(parameters('cosmos-container'))}/docs"
-              }
-            }
-          },
-          "runAfter": {
-            "Get_all_documents_ROWS_TODO": ["Succeeded"]
-          },
-          "else": {
+      "Filter_array_WORKING_ROWS_EseguiOperazione_SI": {
+        "inputs": {
+          "from": "@body('Get_rows')?['value']",
+          "where": "@equals(item()?['EseguiOperazione'], 'SI')"
+        },
+        "runAfter": {
+          "Get_rows": ["Succeeded"]
+        },
+        "type": "Query"
+      },
+      "Filter_array_WORKING_ROWS_StatoDatabase_PENDING_WIP": {
+        "inputs": {
+          "from": "@body('Filter_array_WORKING_ROWS_CFVALIDATED_NOT_EMPTY')",
+          "where": "@or(equals(item()?['StatoDatabase'], 'PENDING'),equals(item()?['StatoDatabase'], 'WIP'))"
+        },
+        "runAfter": {
+          "Filter_array_WORKING_ROWS_CFVALIDATED_NOT_EMPTY": ["Succeeded"]
+        },
+        "type": "Query"
+      },
+      "Filter_array_WORKING_ROWS_TODO": {
+        "inputs": {
+          "from": "@body('Filter_array_WORKING_ROWS_CFVALIDATED_NOT_EMPTY')",
+          "where": "@not(equals(item()?['EsitoOperazione'], 'ESEGUITA'))"
+        },
+        "runAfter": {
+          "Filter_array_WORKING_ROWS_CFVALIDATED_NOT_EMPTY": ["Succeeded"]
+        },
+        "type": "Query"
+      },
+      "For_each_WORKING_ROWS_StatoDatabase_PENDING_WIP": {
+        "actions": {
+          "For_each_PENDING_WIP": {
             "actions": {
-              "For_each_DOCUMENT_EXISTS": {
-                "foreach": "@body('Get_all_documents_ROWS_TODO')?['Documents']",
-                "actions": {
-                  "Condition_CHECK_DOCUMENT_EXISTS": {
-                    "actions": {
-                      "no-op-01": {
-                        "runAfter": {},
-                        "type": "Expression",
-                        "kind": "CurrentTime",
-                        "inputs": {}
-                      }
-                    },
-                    "runAfter": {},
-                    "else": {
-                      "actions": {
-                        "Create_or_update_document_newversion": {
-                          "runAfter": {
-                            "Set_variable_NewDocument_newversion_ROWS_TODO": [
-                              "Succeeded"
-                            ]
-                          },
-                          "type": "ApiConnection",
-                          "inputs": {
-                            "body": "@variables('NewDocument')",
-                            "headers": {
-                              "x-ms-documentdb-raw-partitionkey": "\"@{items('For_each_WORKING_ROWS_TODO')?['CFValidated']}\""
-                            },
-                            "host": {
-                              "connection": {
-                                "name": "@parameters('$connections')['documentdb']['connectionId']"
-                              }
-                            },
-                            "method": "post",
-                            "path": "/dbs/@{encodeURIComponent(parameters('cosmos-db'))}/colls/@{encodeURIComponent(parameters('cosmos-container'))}/docs"
-                          }
-                        },
-                        "Set_variable_NewDocument_newversion_ROWS_TODO": {
-                          "runAfter": {},
-                          "type": "SetVariable",
-                          "inputs": {
-                            "name": "NewDocument",
-                            "value": {
-                              "choice": "@variables('choice_ROWS_TODO')",
-                              "createdAt": "@utcNow()",
-                              "fiscalCode": "@items('For_each_WORKING_ROWS_TODO')?['CFValidated']",
-                              "id": "@{items('For_each_WORKING_ROWS_TODO')?['CFValidated']}-@{variables('choice_ROWS_TODO')}-@{substring(concat('0000000000000000',add(int(item()?['version']),1)),length(string(add(int(item()?['version']),1))),16)}",
-                              "status": "@{if(contains(items('For_each_WORKING_ROWS_TODO')?['OperazioneRichiesta'],'ABORT'),'ABORTED','PENDING')}",
-                              "updatedAt": "@utcNow()",
-                              "userDataProcessingId": "@{items('For_each_WORKING_ROWS_TODO')?['CFValidated']}-@{variables('choice_ROWS_TODO')}",
-                              "version": "@string(add(int(item()?['version']),1))"
-                            }
-                          }
-                        }
-                      }
-                    },
-                    "expression": {
-                      "and": [
-                        {
-                          "equals": ["@variables('choice_ROWS_TODO')", ""]
-                        },
-                        {
-                          "equals": ["@variables('status_ROWS_TODO')", ""]
-                        }
-                      ]
-                    },
-                    "type": "If"
-                  }
+              "Update_row_PENDING_WIP": {
+                "inputs": {
+                  "body": {
+                    "StatoDatabase": "@item()?['status']"
+                  },
+                  "host": {
+                    "connection": {
+                      "name": "@parameters('$connections')['googlesheet']['connectionId']"
+                    }
+                  },
+                  "method": "patch",
+                  "path": "/datasets/@{encodeURIComponent(parameters('googlesheet-id'))}/tables/@{encodeURIComponent(parameters('googlesheet-gid'))}/items/@{encodeURIComponent(items('For_each_WORKING_ROWS_StatoDatabase_PENDING_WIP')?['__PowerAppsId__'])}"
                 },
                 "runAfter": {},
-                "type": "Foreach"
+                "type": "ApiConnection"
               }
+            },
+            "foreach": "@body('Get_all_documents_PENDING_WIP')?['Documents']",
+            "runAfter": {
+              "Get_all_documents_PENDING_WIP": ["Succeeded"]
+            },
+            "type": "Foreach"
+          },
+          "Get_all_documents_PENDING_WIP": {
+            "inputs": {
+              "body": {
+                "QueryText": "SELECT TOP 1 * FROM c WHERE c.fiscalCode = \"@{items('For_each_WORKING_ROWS_StatoDatabase_PENDING_WIP')?['CFValidated']}\" AND c.choice = \"@{variables('choice_PENDING_WIP')}\" ORDER BY c.version DESC"
+              },
+              "host": {
+                "connection": {
+                  "name": "@parameters('$connections')['documentdb']['connectionId']"
+                }
+              },
+              "method": "post",
+              "path": "/v2/dbs/@{encodeURIComponent(parameters('cosmos-db'))}/colls/@{encodeURIComponent(parameters('cosmos-container-user-data-processing'))}/query"
+            },
+            "runAfter": {
+              "Set_variable_choice_PENDING_WIP": ["Succeeded"]
+            },
+            "type": "ApiConnection"
+          },
+          "Set_variable_choice_PENDING_WIP": {
+            "inputs": {
+              "name": "choice_PENDING_WIP",
+              "value": "@{replace(item()?['OperazioneRichiestaEseguita'],'-ABORT','')}"
+            },
+            "runAfter": {},
+            "type": "SetVariable"
+          }
+        },
+        "foreach": "@body('Filter_array_WORKING_ROWS_StatoDatabase_PENDING_WIP')",
+        "runAfter": {
+          "Initialize_variable_choice_PENDING_WIP": ["Succeeded"]
+        },
+        "runtimeConfiguration": {
+          "concurrency": {
+            "repetitions": 1
+          }
+        },
+        "type": "Foreach"
+      },
+      "For_each_WORKING_ROWS_TODO": {
+        "actions": {
+          "Condition": {
+            "actions": {
+              "Create_or_update_document_noversion": {
+                "inputs": {
+                  "body": "@variables('NewDocument')",
+                  "headers": {
+                    "x-ms-documentdb-raw-partitionkey": "\"@{items('For_each_WORKING_ROWS_TODO')?['CFValidated']}\""
+                  },
+                  "host": {
+                    "connection": {
+                      "name": "@parameters('$connections')['documentdb']['connectionId']"
+                    }
+                  },
+                  "method": "post",
+                  "path": "/dbs/@{encodeURIComponent(parameters('cosmos-db'))}/colls/@{encodeURIComponent(parameters('cosmos-container-user-data-processing'))}/docs"
+                },
+                "runAfter": {},
+                "type": "ApiConnection"
+              }
+            },
+            "else": {
+              "actions": {
+                "For_each_DOCUMENT_EXISTS": {
+                  "actions": {
+                    "Condition_CHECK_DOCUMENT_EXISTS": {
+                      "actions": {
+                        "no-op-01": {
+                          "inputs": {},
+                          "kind": "CurrentTime",
+                          "runAfter": {},
+                          "type": "Expression"
+                        }
+                      },
+                      "else": {
+                        "actions": {
+                          "Create_or_update_document_newversion": {
+                            "inputs": {
+                              "body": "@variables('NewDocument')",
+                              "headers": {
+                                "x-ms-documentdb-raw-partitionkey": "\"@{items('For_each_WORKING_ROWS_TODO')?['CFValidated']}\""
+                              },
+                              "host": {
+                                "connection": {
+                                  "name": "@parameters('$connections')['documentdb']['connectionId']"
+                                }
+                              },
+                              "method": "post",
+                              "path": "/dbs/@{encodeURIComponent(parameters('cosmos-db'))}/colls/@{encodeURIComponent(parameters('cosmos-container-user-data-processing'))}/docs"
+                            },
+                            "runAfter": {
+                              "Set_variable_NewDocument_newversion_ROWS_TODO": [
+                                "Succeeded"
+                              ]
+                            },
+                            "type": "ApiConnection"
+                          },
+                          "Set_variable_NewDocument_newversion_ROWS_TODO": {
+                            "inputs": {
+                              "name": "NewDocument",
+                              "value": {
+                                "choice": "@variables('choice_ROWS_TODO')",
+                                "createdAt": "@utcNow()",
+                                "fiscalCode": "@items('For_each_WORKING_ROWS_TODO')?['CFValidated']",
+                                "id": "@{items('For_each_WORKING_ROWS_TODO')?['CFValidated']}-@{variables('choice_ROWS_TODO')}-@{substring(concat('0000000000000000',add(int(item()?['version']),1)),length(string(add(int(item()?['version']),1))),16)}",
+                                "status": "@{if(contains(items('For_each_WORKING_ROWS_TODO')?['OperazioneRichiesta'],'ABORT'),'ABORTED','PENDING')}",
+                                "updatedAt": "@utcNow()",
+                                "userDataProcessingId": "@{items('For_each_WORKING_ROWS_TODO')?['CFValidated']}-@{variables('choice_ROWS_TODO')}",
+                                "version": "@string(add(int(item()?['version']),1))"
+                              }
+                            },
+                            "runAfter": {},
+                            "type": "SetVariable"
+                          }
+                        }
+                      },
+                      "expression": {
+                        "and": [
+                          {
+                            "equals": ["@variables('choice_ROWS_TODO')", ""]
+                          },
+                          {
+                            "equals": ["@variables('status_ROWS_TODO')", ""]
+                          }
+                        ]
+                      },
+                      "runAfter": {},
+                      "type": "If"
+                    }
+                  },
+                  "foreach": "@body('Get_all_documents_ROWS_TODO')?['Documents']",
+                  "runAfter": {},
+                  "type": "Foreach"
+                }
+              }
+            },
+            "expression": {
+              "and": [
+                {
+                  "equals": [
+                    "@body('Get_all_documents_ROWS_TODO')?['_count']",
+                    0
+                  ]
+                }
+              ]
+            },
+            "runAfter": {
+              "Get_all_documents_ROWS_TODO": ["Succeeded"]
+            },
+            "type": "If"
+          },
+          "Get_all_documents_ROWS_TODO": {
+            "inputs": {
+              "body": {
+                "QueryText": "SELECT TOP 1 * FROM c WHERE c.fiscalCode = \"@{items('For_each_WORKING_ROWS_TODO')?['CFValidated']}\" AND c.choice = \"@{variables('choice_ROWS_TODO')}\" ORDER BY c.version DESC"
+              },
+              "host": {
+                "connection": {
+                  "name": "@parameters('$connections')['documentdb']['connectionId']"
+                }
+              },
+              "method": "post",
+              "path": "/v2/dbs/@{encodeURIComponent(parameters('cosmos-db'))}/colls/@{encodeURIComponent(parameters('cosmos-container-user-data-processing'))}/query"
+            },
+            "runAfter": {
+              "Set_variable_NewDocument_ROWS_TODO": ["Succeeded"]
+            },
+            "type": "ApiConnection"
+          },
+          "Set_variable_NewDocument_ROWS_TODO": {
+            "inputs": {
+              "name": "NewDocument",
+              "value": {
+                "choice": "@variables('choice_ROWS_TODO')",
+                "createdAt": "@utcNow()",
+                "fiscalCode": "@items('For_each_WORKING_ROWS_TODO')?['CFValidated']",
+                "id": "@{items('For_each_WORKING_ROWS_TODO')?['CFValidated']}-@{variables('choice_ROWS_TODO')}-0000000000000000",
+                "status": "@variables('status_ROWS_TODO')",
+                "updatedAt": "@utcNow()",
+                "userDataProcessingId": "@{items('For_each_WORKING_ROWS_TODO')?['CFValidated']}-@{variables('choice_ROWS_TODO')}",
+                "version": "0"
+              }
+            },
+            "runAfter": {
+              "Set_variable_status_ROWS_TODO": ["Succeeded"]
+            },
+            "type": "SetVariable"
+          },
+          "Set_variable_choice_ROWS_TODO": {
+            "inputs": {
+              "name": "choice_ROWS_TODO",
+              "value": "@{replace(item()?['OperazioneRichiesta'],'-ABORT','')}"
+            },
+            "runAfter": {},
+            "type": "SetVariable"
+          },
+          "Set_variable_status_ROWS_TODO": {
+            "inputs": {
+              "name": "status_ROWS_TODO",
+              "value": "@{if(contains(items('For_each_WORKING_ROWS_TODO')?['OperazioneRichiesta'],'ABORT'),'ABORTED','PENDING')}"
+            },
+            "runAfter": {
+              "Set_variable_choice_ROWS_TODO": ["Succeeded"]
+            },
+            "type": "SetVariable"
+          },
+          "Update_row_ROWS_TODO": {
+            "inputs": {
+              "body": {
+                "DataOperazione": "@string(utcNow('dd/MM/yyyy'))",
+                "EsitoOperazione": "ESEGUITA",
+                "OperazioneRichiestaEseguita": "@{items('For_each_WORKING_ROWS_TODO')?['OperazioneRichiesta']}",
+                "StatoDatabase": "@variables('status_ROWS_TODO')"
+              },
+              "host": {
+                "connection": {
+                  "name": "@parameters('$connections')['googlesheet']['connectionId']"
+                }
+              },
+              "method": "patch",
+              "path": "/datasets/@{encodeURIComponent(parameters('googlesheet-id'))}/tables/@{encodeURIComponent(parameters('googlesheet-gid'))}/items/@{encodeURIComponent(items('For_each_WORKING_ROWS_TODO')?['__PowerAppsId__'])}"
+            },
+            "runAfter": {
+              "Condition": ["Succeeded"]
+            },
+            "type": "ApiConnection"
+          }
+        },
+        "foreach": "@body('Filter_array_WORKING_ROWS_TODO')",
+        "runAfter": {
+          "Initialize_variable_NewDocument_ROWS_TODO": ["Succeeded"]
+        },
+        "runtimeConfiguration": {
+          "concurrency": {
+            "repetitions": 1
+          }
+        },
+        "type": "Foreach"
+      },
+      "Get_rows": {
+        "inputs": {
+          "host": {
+            "connection": {
+              "name": "@parameters('$connections')['googlesheet']['connectionId']"
             }
           },
-          "expression": {
-            "and": [
-              {
-                "equals": ["@body('Get_all_documents_ROWS_TODO')?['_count']", 0]
-              }
-            ]
-          },
-          "type": "If"
+          "method": "get",
+          "path": "/datasets/@{encodeURIComponent(parameters('googlesheet-id'))}/tables/@{encodeURIComponent(parameters('googlesheet-gid'))}/items"
         },
-        "Get_all_documents_ROWS_TODO": {
-          "runAfter": {
-            "Set_variable_NewDocument_ROWS_TODO": ["Succeeded"]
-          },
-          "type": "ApiConnection",
-          "inputs": {
-            "body": {
-              "QueryText": "SELECT TOP 1 * FROM c WHERE c.fiscalCode = \"@{items('For_each_WORKING_ROWS_TODO')?['CFValidated']}\" AND c.choice = \"@{variables('choice_ROWS_TODO')}\" ORDER BY c.version DESC"
-            },
-            "host": {
-              "connection": {
-                "name": "@parameters('$connections')['documentdb']['connectionId']"
-              }
-            },
-            "method": "post",
-            "path": "/v2/dbs/@{encodeURIComponent(parameters('cosmos-db'))}/colls/@{encodeURIComponent(parameters('cosmos-container'))}/query"
-          }
-        },
-        "Set_variable_NewDocument_ROWS_TODO": {
-          "runAfter": {
-            "Set_variable_status_ROWS_TODO": ["Succeeded"]
-          },
-          "type": "SetVariable",
-          "inputs": {
-            "name": "NewDocument",
-            "value": {
-              "choice": "@variables('choice_ROWS_TODO')",
-              "createdAt": "@utcNow()",
-              "fiscalCode": "@items('For_each_WORKING_ROWS_TODO')?['CFValidated']",
-              "id": "@{items('For_each_WORKING_ROWS_TODO')?['CFValidated']}-@{variables('choice_ROWS_TODO')}-0000000000000000",
-              "status": "@variables('status_ROWS_TODO')",
-              "updatedAt": "@utcNow()",
-              "userDataProcessingId": "@{items('For_each_WORKING_ROWS_TODO')?['CFValidated']}-@{variables('choice_ROWS_TODO')}",
-              "version": "0"
+        "runAfter": {},
+        "type": "ApiConnection"
+      },
+      "Initialize_variable_NewDocument_ROWS_TODO": {
+        "inputs": {
+          "variables": [
+            {
+              "name": "NewDocument",
+              "type": "object",
+              "value": {}
             }
-          }
+          ]
         },
-        "Set_variable_choice_ROWS_TODO": {
-          "runAfter": {},
-          "type": "SetVariable",
-          "inputs": {
-            "name": "choice_ROWS_TODO",
-            "value": "@{replace(item()?['OperazioneRichiesta'],'-ABORT','')}"
-          }
+        "runAfter": {
+          "Initialize_variable_status_ROWS_TODO": ["Succeeded"]
         },
-        "Set_variable_status_ROWS_TODO": {
-          "runAfter": {
-            "Set_variable_choice_ROWS_TODO": ["Succeeded"]
-          },
-          "type": "SetVariable",
-          "inputs": {
-            "name": "status_ROWS_TODO",
-            "value": "@{if(contains(items('For_each_WORKING_ROWS_TODO')?['OperazioneRichiesta'],'ABORT'),'ABORTED','PENDING')}"
-          }
+        "type": "InitializeVariable"
+      },
+      "Initialize_variable_choice_PENDING_WIP": {
+        "inputs": {
+          "variables": [
+            {
+              "name": "choice_PENDING_WIP",
+              "type": "String",
+              "value": "no-op"
+            }
+          ]
         },
-        "Update_row_ROWS_TODO": {
-          "runAfter": {
-            "Condition": ["Succeeded"]
-          },
-          "type": "ApiConnection",
-          "inputs": {
-            "body": {
-              "DataOperazione": "@string(utcNow('dd/MM/yyyy'))",
-              "EsitoOperazione": "ESEGUITA",
-              "OperazioneRichiestaEseguita": "@{items('For_each_WORKING_ROWS_TODO')?['OperazioneRichiesta']}",
-              "StatoDatabase": "@variables('status_ROWS_TODO')"
-            },
-            "host": {
-              "connection": {
-                "name": "@parameters('$connections')['googlesheet']['connectionId']"
-              }
-            },
-            "method": "patch",
-            "path": "/datasets/@{encodeURIComponent(parameters('googlesheet-id'))}/tables/@{encodeURIComponent(parameters('googlesheet-gid'))}/items/@{encodeURIComponent(items('For_each_WORKING_ROWS_TODO')?['__PowerAppsId__'])}"
-          }
-        }
-      },
-      "runAfter": {
-        "Initialize_variable_NewDocument_ROWS_TODO": ["Succeeded"]
-      },
-      "type": "Foreach",
-      "runtimeConfiguration": {
-        "concurrency": {
-          "repetitions": 1
-        }
-      }
-    },
-    "Get_rows": {
-      "runAfter": {},
-      "type": "ApiConnection",
-      "inputs": {
-        "host": {
-          "connection": {
-            "name": "@parameters('$connections')['googlesheet']['connectionId']"
-          }
+        "runAfter": {
+          "Filter_array_WORKING_ROWS_StatoDatabase_PENDING_WIP": ["Succeeded"]
         },
-        "method": "get",
-        "path": "/datasets/@{encodeURIComponent(parameters('googlesheet-id'))}/tables/@{encodeURIComponent(parameters('googlesheet-gid'))}/items"
+        "type": "InitializeVariable"
+      },
+      "Initialize_variable_choice_ROWS_TODO": {
+        "inputs": {
+          "variables": [
+            {
+              "name": "choice_ROWS_TODO",
+              "type": "String",
+              "value": "no-op"
+            }
+          ]
+        },
+        "runAfter": {
+          "Filter_array_WORKING_ROWS_TODO": ["Succeeded"]
+        },
+        "type": "InitializeVariable"
+      },
+      "Initialize_variable_status_ROWS_TODO": {
+        "inputs": {
+          "variables": [
+            {
+              "name": "status_ROWS_TODO",
+              "type": "String",
+              "value": "no-op"
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_variable_choice_ROWS_TODO": ["Succeeded"]
+        },
+        "type": "InitializeVariable"
       }
     },
-    "Initialize_variable_NewDocument_ROWS_TODO": {
-      "runAfter": {
-        "Initialize_variable_status_ROWS_TODO": ["Succeeded"]
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "$connections": {
+        "defaultValue": {},
+        "type": "Object"
       },
-      "type": "InitializeVariable",
-      "inputs": {
-        "variables": [
-          {
-            "name": "NewDocument",
-            "type": "object",
-            "value": {}
-          }
-        ]
+      "cosmos-container-user-data-processing": {
+        "defaultValue": "user-data-processing",
+        "type": "String"
+      },
+      "cosmos-container-profiles": {
+        "defaultValue": "profiles",
+        "type": "String"
+      },
+      "cosmos-db": {
+        "defaultValue": "db",
+        "type": "String"
+      },
+      "googlesheet-gid": {
+        "defaultValue": "default-googlesheet-gid",
+        "type": "String"
+      },
+      "googlesheet-id": {
+        "defaultValue": "default-googlesheet-id",
+        "type": "String"
       }
     },
-    "Initialize_variable_choice_PENDING_WIP": {
-      "runAfter": {
-        "Filter_array_WORKING_ROWS_StatoDatabase_PENDING_WIP": ["Succeeded"]
-      },
-      "type": "InitializeVariable",
-      "inputs": {
-        "variables": [
-          {
-            "name": "choice_PENDING_WIP",
-            "type": "String",
-            "value": "no-op"
-          }
-        ]
-      }
-    },
-    "Initialize_variable_choice_ROWS_TODO": {
-      "runAfter": {
-        "Filter_array_WORKING_ROWS_TODO": ["Succeeded"]
-      },
-      "type": "InitializeVariable",
-      "inputs": {
-        "variables": [
-          {
-            "name": "choice_ROWS_TODO",
-            "type": "String",
-            "value": "no-op"
-          }
-        ]
-      }
-    },
-    "Initialize_variable_status_ROWS_TODO": {
-      "runAfter": {
-        "Initialize_variable_choice_ROWS_TODO": ["Succeeded"]
-      },
-      "type": "InitializeVariable",
-      "inputs": {
-        "variables": [
-          {
-            "name": "status_ROWS_TODO",
-            "type": "String",
-            "value": "no-op"
-          }
-        ]
+    "triggers": {
+      "Recurrence": {
+        "recurrence": {
+          "frequency": "Minute",
+          "interval": 5
+        },
+        "type": "Recurrence"
       }
     }
-  }
+  },
+  "parameters": {}
 }
