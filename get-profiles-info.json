@@ -209,7 +209,7 @@
         "Get_all_documents": {
           "inputs": {
             "body": {
-              "QueryText": "SELECT TOP 1 c.email, c.isEmailValidated FROM c WHERE c.fiscalCode = \"@{toupper(items('For_each_CF-VALID')?['CFUtente'])}\" ORDER BY c.version DESC"
+              "QueryText": "SELECT TOP 1 c.email, c.isEmailValidated FROM c WHERE c.fiscalCode = \"@{trim(toupper(items('For_each_CF-VALID')?['CFUtente']))}\" ORDER BY c.version DESC"
             },
             "host": {
               "connection": {
