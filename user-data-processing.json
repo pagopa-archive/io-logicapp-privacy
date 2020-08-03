@@ -14,11 +14,13 @@
       },
       "Filter_array_WORKING_ROWS_EMAIL_IO_NOT_EMPTY": {
         "inputs": {
-          "from": "@body('Filter_array_WORKING_ROWS_EseguiOperazione_SI')",
+          "from": "@body('Filter_array_WORKING_ROWS_OperazioneRichiesta_IS_NOT_EMPTY')",
           "where": "@not(equals(length(concat('', item()?['Email_IO'])), 0))"
         },
         "runAfter": {
-          "Filter_array_WORKING_ROWS_EseguiOperazione_SI": ["Succeeded"]
+          "Filter_array_WORKING_ROWS_OperazioneRichiesta_IS_NOT_EMPTY": [
+            "Succeeded"
+          ]
         },
         "type": "Query"
       },
@@ -29,6 +31,16 @@
         },
         "runAfter": {
           "Get_rows": ["Succeeded"]
+        },
+        "type": "Query"
+      },
+      "Filter_array_WORKING_ROWS_OperazioneRichiesta_IS_NOT_EMPTY": {
+        "inputs": {
+          "from": "@body('Filter_array_WORKING_ROWS_EseguiOperazione_SI')",
+          "where": "@not(equals(length(concat('', item()?['OperazioneRichiesta'])), 0))"
+        },
+        "runAfter": {
+          "Filter_array_WORKING_ROWS_EseguiOperazione_SI": ["Succeeded"]
         },
         "type": "Query"
       },
@@ -397,12 +409,12 @@
         "defaultValue": {},
         "type": "Object"
       },
-      "cosmos-container-user-data-processing": {
-        "defaultValue": "user-data-processing",
-        "type": "String"
-      },
       "cosmos-container-profiles": {
         "defaultValue": "profiles",
+        "type": "String"
+      },
+      "cosmos-container-user-data-processing": {
+        "defaultValue": "user-data-processing",
         "type": "String"
       },
       "cosmos-db": {
@@ -422,7 +434,7 @@
       "Recurrence": {
         "recurrence": {
           "frequency": "Minute",
-          "interval": 5
+          "interval": 30
         },
         "type": "Recurrence"
       }
