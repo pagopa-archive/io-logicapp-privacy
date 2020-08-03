@@ -4,7 +4,7 @@
     "actions": {
       "Filter_array_CF-NOT-VALID": {
         "inputs": {
-          "from": "@body('Filter_array_NEW_ROWS')",
+          "from": "@body('Filter_array_CF_NOT_EMPTY')",
           "where": "@not(or(equals(length(trim(item()['CFUtente'])), 16),equals(length(trim(item()['CFUtente'])), 11)))"
         },
         "runAfter": {
@@ -22,10 +22,20 @@
         },
         "type": "Query"
       },
+      "Filter_array_CF_NOT_EMPTY": {
+        "inputs": {
+          "from": "@body('Filter_array_NEW_ROWS')",
+          "where": "@not(equals(length(concat('', trim(item()?['CFUtente']))), 0))"
+        },
+        "runAfter": {
+          "Filter_array_NEW_ROWS": ["Succeeded"]
+        },
+        "type": "Query"
+      },
       "Filter_array_NEW_ROWS": {
         "inputs": {
           "from": "@body('Get_rows')?['value']",
-          "where": "@equals(length(concat('', item()?['Email_IO'])), 0)"
+          "where": "@equals(length(concat('', trim(item()?['Email_IO']))), 0)"
         },
         "runAfter": {
           "Get_rows": ["Succeeded"]
@@ -234,9 +244,9 @@
             "type": "ApiConnection"
           }
         },
-        "foreach": "@body('Filter_array_NEW_ROWS')",
+        "foreach": "@body('Filter_array_CF_NOT_EMPTY')",
         "runAfter": {
-          "Filter_array_NEW_ROWS": ["Succeeded"]
+          "Filter_array_CF_NOT_EMPTY": ["Succeeded"]
         },
         "type": "Foreach"
       },
