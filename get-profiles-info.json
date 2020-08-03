@@ -18,7 +18,7 @@
           "where": "@or(equals(length(trim(item()['CFUtente'])), 16),equals(length(trim(item()['CFUtente'])), 11))"
         },
         "runAfter": {
-          "For_each_CF-NOT-VALID": ["Succeeded"]
+          "For_each_UPDATE_TRIM_UPPER": ["Succeeded"]
         },
         "type": "Query"
       },
@@ -46,9 +46,6 @@
               },
               "method": "patch",
               "path": "/datasets/@{encodeURIComponent(parameters('googlesheet-id'))}/tables/@{encodeURIComponent(parameters('googlesheet-gid'))}/items/@{encodeURIComponent(items('For_each_CF-NOT-VALID')?['__PowerAppsId__'])}"
-            },
-            "metadata": {
-              "1wzboDF399kTiIMC81Q2X_6Vnz2bDNnk_acRFO5Pb24w": "RichiesteDirittiPrivacy"
             },
             "runAfter": {},
             "type": "ApiConnection"
@@ -102,9 +99,6 @@
                           "method": "patch",
                           "path": "/datasets/@{encodeURIComponent(parameters('googlesheet-id'))}/tables/@{encodeURIComponent(parameters('googlesheet-gid'))}/items/@{encodeURIComponent(items('For_each_CF-VALID')?['__PowerAppsId__'])}"
                         },
-                        "metadata": {
-                          "1wzboDF399kTiIMC81Q2X_6Vnz2bDNnk_acRFO5Pb24w": "RichiesteDirittiPrivacy"
-                        },
                         "runAfter": {},
                         "type": "ApiConnection"
                       },
@@ -120,9 +114,6 @@
                           },
                           "method": "patch",
                           "path": "/datasets/@{encodeURIComponent(parameters('googlesheet-id'))}/tables/@{encodeURIComponent(parameters('googlesheet-gid'))}/items/@{encodeURIComponent(items('For_each_CF-VALID')?['__PowerAppsId__'])}"
-                        },
-                        "metadata": {
-                          "1wzboDF399kTiIMC81Q2X_6Vnz2bDNnk_acRFO5Pb24w": "RichiesteDirittiPrivacy"
                         },
                         "runAfter": {
                           "Get_all_documents_EMAIL-SHARED": ["Succeeded"]
@@ -144,9 +135,6 @@
                             },
                             "method": "patch",
                             "path": "/datasets/@{encodeURIComponent(parameters('googlesheet-id'))}/tables/@{encodeURIComponent(parameters('googlesheet-gid'))}/items/@{encodeURIComponent(items('For_each_CF-VALID')?['__PowerAppsId__'])}"
-                          },
-                          "metadata": {
-                            "1wzboDF399kTiIMC81Q2X_6Vnz2bDNnk_acRFO5Pb24w": "RichiesteDirittiPrivacy"
                           },
                           "runAfter": {},
                           "type": "ApiConnection"
@@ -186,9 +174,6 @@
                     },
                     "method": "patch",
                     "path": "/datasets/@{encodeURIComponent(parameters('googlesheet-id'))}/tables/@{encodeURIComponent(parameters('googlesheet-gid'))}/items/@{encodeURIComponent(items('For_each_CF-VALID')?['__PowerAppsId__'])}"
-                  },
-                  "metadata": {
-                    "1wzboDF399kTiIMC81Q2X_6Vnz2bDNnk_acRFO5Pb24w": "RichiesteDirittiPrivacy"
                   },
                   "runAfter": {},
                   "type": "ApiConnection"
@@ -245,9 +230,6 @@
               "method": "patch",
               "path": "/datasets/@{encodeURIComponent(parameters('googlesheet-id'))}/tables/@{encodeURIComponent(parameters('googlesheet-gid'))}/items/@{encodeURIComponent(items('For_each_UPDATE_TRIM_UPPER')?['__PowerAppsId__'])}"
             },
-            "metadata": {
-              "1wzboDF399kTiIMC81Q2X_6Vnz2bDNnk_acRFO5Pb24w": "RichiesteDirittiPrivacy"
-            },
             "runAfter": {},
             "type": "ApiConnection"
           }
@@ -267,9 +249,6 @@
           },
           "method": "get",
           "path": "/datasets/@{encodeURIComponent(parameters('googlesheet-id'))}/tables/@{encodeURIComponent(parameters('googlesheet-gid'))}/items"
-        },
-        "metadata": {
-          "@parameters('googlesheet-id')": "RichiesteDirittiPrivacy"
         },
         "runAfter": {},
         "type": "ApiConnection"
