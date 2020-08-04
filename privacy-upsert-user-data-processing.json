@@ -192,13 +192,13 @@
                               "name": "NewDocument",
                               "value": {
                                 "choice": "@variables('choice_ROWS_TODO')",
-                                "createdAt": "@utcNow()",
+                                "createdAt": "@utcNow('yyyy-MM-ddTHH:mm:ss.fffK')",
                                 "fiscalCode": "@items('For_each_WORKING_ROWS_TODO')?['CFValidated']",
                                 "id": "@{items('For_each_WORKING_ROWS_TODO')?['CFValidated']}-@{variables('choice_ROWS_TODO')}-@{substring(concat('0000000000000000',add(int(item()?['version']),1)),length(string(add(int(item()?['version']),1))),16)}",
                                 "status": "@{if(contains(items('For_each_WORKING_ROWS_TODO')?['OperazioneRichiesta'],'ABORT'),'ABORTED','PENDING')}",
-                                "updatedAt": "@utcNow()",
+                                "updatedAt": "@utcNow('yyyy-MM-ddTHH:mm:ss.fffK')",
                                 "userDataProcessingId": "@{items('For_each_WORKING_ROWS_TODO')?['CFValidated']}-@{variables('choice_ROWS_TODO')}",
-                                "version": "@string(add(int(item()?['version']),1))"
+                                "version": "@add(int(item()?['version']),1)"
                               }
                             },
                             "runAfter": {},
@@ -264,13 +264,13 @@
               "name": "NewDocument",
               "value": {
                 "choice": "@variables('choice_ROWS_TODO')",
-                "createdAt": "@utcNow()",
+                "createdAt": "@utcNow('yyyy-MM-ddTHH:mm:ss.fffK')",
                 "fiscalCode": "@items('For_each_WORKING_ROWS_TODO')?['CFValidated']",
                 "id": "@{items('For_each_WORKING_ROWS_TODO')?['CFValidated']}-@{variables('choice_ROWS_TODO')}-0000000000000000",
                 "status": "@variables('status_ROWS_TODO')",
-                "updatedAt": "@utcNow()",
+                "updatedAt": "@utcNow('yyyy-MM-ddTHH:mm:ss.fffK')",
                 "userDataProcessingId": "@{items('For_each_WORKING_ROWS_TODO')?['CFValidated']}-@{variables('choice_ROWS_TODO')}",
-                "version": "0"
+                "version": 0
               }
             },
             "runAfter": {
@@ -408,10 +408,6 @@
       "$connections": {
         "defaultValue": {},
         "type": "Object"
-      },
-      "cosmos-container-profiles": {
-        "defaultValue": "profiles",
-        "type": "String"
       },
       "cosmos-container-user-data-processing": {
         "defaultValue": "user-data-processing",
